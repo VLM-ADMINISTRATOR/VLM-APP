@@ -1,0 +1,27 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "backend for our app",
+  "homepage": "https://github.com/VLM-ADMINISTRATOR/VLM-APP#readme",
+  "bugs": {
+    "url": "https://github.com/VLM-ADMINISTRATOR/VLM-APP/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VLM-ADMINISTRATOR/VLM-APP.git"
+  },
+  "license": "ISC",
+  "author": "VLM",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2"
+  }
+}
