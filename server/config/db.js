@@ -1,9 +1,17 @@
-import { Pool } from "pg";
+import { connect } from 'mongoose';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const connectDB = async () => {
+  try {
+    const conn = await connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
-export const query = (text, params) => pool.query(text, params);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1); // Exit with failure
+  }
+};
 
-export default pool;
+export default connectDB;

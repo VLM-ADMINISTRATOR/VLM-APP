@@ -1,51 +1,70 @@
 import { Router } from "express";
-import { hash, compare } from "bcrypt";
-import pkg from "jsonwebtoken";
-const { sign } = pkg; // Destructure sign from the imported package
-import { query } from "../config/db.js";
+import jwt from "jsonwebtoken";  // Importing the whole module
+import User from "../models/User.js"; // Adjust path if needed
+
+const { sign } = jwt;  // Destructuring `sign` from jwt
 
 const router = Router();
 
-// Register
+// Register route
 router.post("/register", async (req, res) => {
-  const { username, email, password, role } = req.body;
-  try {
-    const userExists = await query("SELECT * FROM users WHERE email = $1", [email]);
-    if (userExists.rows.length) return res.status(400).json({ message: "Email already registered" });
+  const { username, email, password } = req.body;
 
-    const hashedPassword = await hash(password, 10);
-    await query(
-      "INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4)",
-      [username, email, hashedPassword, role || "user"]
-    );
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const newUser = new User({
+      username,
+      email,
+      password
+    });
+
+    await newUser.save();
 
     res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
+    console.error("Register Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
-// Login
+// Login route
 router.post("/login", async (req, res) => {
-  const { email, password, role } = req.body;
-  try {
-    const user = await query("SELECT * FROM users WHERE email = $1 AND role = $2", [email, role]);
-    if (!user.rows.length) return res.status(400).json({ message: "Invalid credentials" });
+  const { email, password } = req.body;
 
-    const validPassword = await compare(password, user.rows[0].password);
-    if (!validPassword) return res.status(400).json({ message: "Invalid credentials" });
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = sign(
-      { id: user.rows[0].id, role: user.rows[0].role },
+      { id: user._id, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     res.json({
       token,
-      user: { id: user.rows[0].id, username: user.rows[0].username, role: user.rows[0].role }
+      user: {
+        id: user._id,
+        username: user.username,
+      }
     });
   } catch (err) {
+    console.error("Login Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
